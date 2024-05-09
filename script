@@ -1,8 +1,10 @@
 #verificando a presença do pacote e sua instalação, se necessária
 if(!require(dplyr)) {install.packages("dplyr")}
+if(!require(readr)) {install.packages("readr")}
 
 #carregando pacote
 library(dplyr)
+library(readr)
 
 #lendo a base de dados
 baseAgrupada = read_excel("BaseAgrupada_2018.xlsx")
