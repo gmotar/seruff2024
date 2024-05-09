@@ -1,1 +1,81 @@
+#verificando a presença do pacote e sua instalação, se necessária
+if(!require(dplyr)) {install.packages("dplyr")}
+if(!require(readr)) {install.packages("readr")}
 
+#carregando pacote
+library(dplyr)
+library(readr)
+
+#lendo a base de dados
+baseAgrupada = read_excel("BaseAgrupada_2018.xlsx")
+
+#transformando a base de acordo com os labels
+# RACACOR: 1: Branca; 2: Preta; 3: Amarela; 4: Parda; 5: Indígena
+# ESTCIVMAE 1: Solteira; 2: Casada; 3: Viuva; 4: Separado judicialmente/Divorciado; 5: União consensual (versões anteriores); 9: Ignorado
+# ESCMAE2010 0 – Sem escolaridade; 1 –Fundamental I (1a a 4a série); 2 – Fundamental II (5a a 8a série); 3 – Médio (antigo 2o Grau); 
+             #4 – Superior incompleto; 5 –Superior completo; 9 – Ignorado.
+
+#Rotulando as categorias
+baseRotulada = baseAgrupada %>%
+  mutate(RACACORMAE = factor(RACACORMAE, levels = c(1,2,3,4,5),
+                             labels = c("Branca", "Preta", "Amarela",
+                                        "Parda", "Indígena")),
+         ESTCIVMAE = factor(ESTCIVMAE, levels = c(1,2,3,4,5,9),
+                            labels = c("Solteira", "Casada", "Viúva",
+                                       "Separada judicialmente/divorciada",
+                                       "União Estável", "Ignorado")),
+         ESCMAE2010 = factor(ESCMAE2010, levels = c(0,1,2,3,4,5,9),
+                             labels = c("Sem escolaridade", "Fundamental I",
+                                        "Fundamental II", "Médio", 
+                                        "Superior Incompleto", 
+                                        "Superior completo", "Ignorado")))
+
+#criando as tabelas para visualizar total de mortes, total de nascidos vivos e a razão por categoria
+tab_raca = baseRotulada %>%
+  group_by(RACACORMAE) %>%
+  summarise(sum(total_mm), sum(total_nv), 
+            taxa=round(100000*sum(total_mm)/sum(total_nv), 2))
+
+tab_esc = baseRotulada %>%
+  group_by(ESCMAE2010) %>%
+  summarise(sum(total_mm), sum(total_nv), 
+            taxa=round(100000*sum(total_mm)/sum(total_nv), 2))
+
+tab_estciv = baseRotulada %>%
+  group_by(ESTCIVMAE) %>%
+  summarise(sum(total_mm), sum(total_nv), 
+            taxa=round(100000*sum(total_mm)/sum(total_nv), 2))
+
+#dicotomizando as covariaveis e rotulando a base (grupo de risco)
+baseGrupoRisco = baseAgrupada %>%
+  mutate(ESTCIVMAE = if_else(ESTCIVMAE == 2 | ESTCIVMAE == 5, 0, 1),
+         ESCMAE2010 = if_else(ESCMAE2010 == 0 | ESCMAE2010 == 1, 1, 0),
+         RACACORMAE = if_else(RACACORMAE == 2, 1 ,0)) %>%
+  mutate(RACACORMAE = factor(RACACORMAE, levels = c(0,1),
+                             labels = c("Não preta", "Preta")),
+         ESTCIVMAE = factor(ESTCIVMAE, levels = c(0,1),
+                            labels = c("Com parceiro", "Sem parceiro")),
+         ESCMAE2010 = factor(ESCMAE2010, levels = c(0,1),
+                             labels = c("A partir do Fund. II", "Até Fund. I")),
+         INDIDADERISCO = factor(INDIDADERISCO))
+
+#tabelas para as categorias de risco
+tab2_raca = baseGrupoRisco %>%
+  group_by(RACACORMAE) %>%
+  summarise(sum(total_mm), sum(total_nv), 
+            taxa=round(100000*sum(total_mm)/sum(total_nv), 2))
+
+tab2_esc = baseGrupoRisco %>%
+  group_by(ESCMAE2010) %>%
+  summarise(sum(total_mm), sum(total_nv), 
+            taxa=round(100000*sum(total_mm)/sum(total_nv), 2))
+
+tab2_estciv = baseGrupoRisco %>%
+  group_by(ESTCIVMAE) %>%
+  summarise(sum(total_mm), sum(total_nv), 
+            taxa=round(100000*sum(total_mm)/sum(total_nv), 2))
+
+tab2_idade = baseGrupoRisco %>%
+  group_by(INDIDADERISCO) %>%
+  summarise(sum(total_mm), sum(total_nv), 
+            taxa=round(100000*sum(total_mm)/sum(total_nv), 2))
