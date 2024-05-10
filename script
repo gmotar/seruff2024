@@ -48,16 +48,11 @@ tab_estciv = baseRotulada %>%
 
 #dicotomizando as covariaveis e rotulando a base (grupo de risco)
 baseGrupoRisco = baseAgrupada %>%
-  mutate(ESTCIVMAE = if_else(ESTCIVMAE == 2 | ESTCIVMAE == 5, 0, 1),
-         ESCMAE2010 = if_else(ESCMAE2010 == 0 | ESCMAE2010 == 1, 1, 0),
-         RACACORMAE = if_else(RACACORMAE == 2, 1 ,0)) %>%
-  mutate(RACACORMAE = factor(RACACORMAE, levels = c(0,1),
-                             labels = c("Não preta", "Preta")),
-         ESTCIVMAE = factor(ESTCIVMAE, levels = c(0,1),
-                            labels = c("Com parceiro", "Sem parceiro")),
-         ESCMAE2010 = factor(ESCMAE2010, levels = c(0,1),
-                             labels = c("A partir do Fund. II", "Até Fund. I")),
-         INDIDADERISCO = factor(INDIDADERISCO))
+   mutate(ESTCIVMAE = factor(if_else(ESTCIVMAE == 2 | ESTCIVMAE == 5, "Com parceiro", "Sem parceiro")),
+          ESCMAE2010 = factor(if_else(ESCMAE2010 == 0 | ESCMAE2010 == 1, "Até Fund. I", "A partir do Fund. II")),
+          RACACORMAE = factor(if_else(RACACORMAE == 2, "Preta" ,"Não preta")),
+          INDIDADERISCO = factor(INDIDADERISCO))
+
 
 #tabelas para as categorias de risco
 tab2_raca = baseGrupoRisco %>%
@@ -79,3 +74,10 @@ tab2_idade = baseGrupoRisco %>%
   group_by(INDIDADERISCO) %>%
   summarise(sum(total_mm), sum(total_nv), 
             taxa=round(100000*sum(total_mm)/sum(total_nv), 2))
+
+# Definindo a categoria de base
+  baseGrupoRiscoCB = baseGrupoRisco %>% 
+   mutate(INDIDADERISCO = relevel(INDIDADERISCO, ref = "Menos de 40 anos"),
+          ESTCIVMAE = relevel(ESTCIVMAE, ref = "Com parceiro"),
+          ESCMAE2010 = relevel(ESCMAE2010, ref = "A partir do Fund. II"),
+          RACACORMAE = relevel(RACACORMAE, ref = "Não preta"))
